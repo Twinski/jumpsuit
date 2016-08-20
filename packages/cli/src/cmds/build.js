@@ -5,7 +5,7 @@ import chokidar from 'chokidar'
 import serve from './serve'
 import { debounce } from '../utils/common'
 import { CONFIG } from '../utils/config'
-import { outputLogo, pending, pendingDone, error } from '../utils/emit'
+import { outputLogo, pending, pendingDone, error, log } from '../utils/emit'
 import { buildJs } from '../compilers/javascript'
 import { buildAsset } from '../compilers/assets'
 import { buildStyles } from '../compilers/styles'
@@ -46,15 +46,26 @@ export async function handleEvent (evt, file) {
   }
 
   try {
-    /* determine action based on file extension */
+
+    // Check if file is inside assets directory (config)
+    if( CONFIG.assetsDir ){
+      if( path.dirname(file).indexOf(CONFIG.assetsDir) == 0 ){
+        // Asset found!
+        // log('asset found!', file)
+        await buildAsset(evt, file)
+      }
+    }
+
+
     const ext = path.extname(file)
     if (CONFIG.browserify.extensions.indexOf(ext) > -1) {
       await buildJs(evt, file)
     } else if (CONFIG.styles && CONFIG.styles.extensions.indexOf(ext) > -1) {
       await buildStyles(evt, file)
-    } else if (CONFIG.assetsIgnoreExtensions.indexOf(ext) === -1) {
-      await buildAsset(evt, file)
-    }
+    } 
+    // else if (CONFIG.assetsIgnoreExtensions.indexOf(ext) === -1) {
+    //   await buildAsset(evt, file)
+    // }
   } catch (err) {
     evtCount--
     error(err, true)
